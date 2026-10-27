@@ -63,31 +63,36 @@ void output_blip_to_screen(Simulation_Run_Ptr simulation_run){
 void output_results(Simulation_Run_Ptr this_simulation_run){
   int i;
   double xmtted_fraction;
+  double total_time, throughput, aggregate_load;
   Simulation_Run_Data_Ptr sim_data;
   static int header_printed = 0;
   sim_data = (Simulation_Run_Data_Ptr) simulation_run_data(this_simulation_run);
 
   if(!header_printed){
-    printf("seed,arrival_rate,arrivals,processed,mean_delay,collisions_per_packet\n");
+    printf("seed,arrival_rate,arrivals,processed,mean_delay,collisions_per_packet,throughput,aggregate_load\n");
     header_printed=1;
   }
 
   xmtted_fraction=(double) sim_data->number_of_packets_processed /
     sim_data->arrival_count;
 
-  printf("%u,%.6f,%ld,%ld,%.6f,%.6f\n",
-	 sim_data->random_seed, sim_data->packet_arrival_rate,
-	 sim_data->arrival_count, sim_data->number_of_packets_processed,
-	 sim_data->accumulated_delay / sim_data->number_of_packets_processed,
-	 (double) sim_data->number_of_collisions / sim_data->number_of_packets_processed);
+  total_time = simulation_run_get_time(this_simulation_run);
+  throughput = (total_time > 0.0) ? (double) sim_data->number_of_packets_processed / total_time : 0.0;
+  aggregate_load = (double) NUMBER_OF_STATIONS * sim_data->packet_arrival_rate * MEAN_PACKET_DURATION;
+
+  printf("%u,%.6f,%ld,%ld,%.6f,%.6f,%.6f,%.6f\n",
+     sim_data->random_seed, sim_data->packet_arrival_rate,
+     sim_data->arrival_count, sim_data->number_of_packets_processed,
+     sim_data->accumulated_delay / sim_data->number_of_packets_processed,
+     (double) sim_data->number_of_collisions / sim_data->number_of_packets_processed,
+     throughput, aggregate_load);
 
   for(i=0; i<NUMBER_OF_STATIONS; i++){
     printf("station,%u,%.6f,%d,%f\n",
-	   sim_data->random_seed, sim_data->packet_arrival_rate,
-	   i, (sim_data->stations+i)->accumulated_delay/(sim_data->stations+i)->packet_count);
+       sim_data->random_seed, sim_data->packet_arrival_rate,
+       i, (sim_data->stations+i)->accumulated_delay/(sim_data->stations+i)->packet_count);
   }
   fflush(stdout);
 }
-
 
 
